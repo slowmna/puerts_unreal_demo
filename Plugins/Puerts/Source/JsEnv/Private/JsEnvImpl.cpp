@@ -338,8 +338,8 @@ FJsEnvImpl::FJsEnvImpl(std::shared_ptr<IJSModuleLoader> InModuleLoader, std::sha
     v8::V8::SetFlagsFromString("--single-threaded");
 #endif
 
-    // char GCFlags[] = "--expose-gc";
-    // v8::V8::SetFlagsFromString(GCFlags, sizeof(GCFlags));
+    char GCFlags[] = "--expose-gc";
+    v8::V8::SetFlagsFromString(GCFlags, sizeof(GCFlags));
 
     if (!InFlags.IsEmpty())
     {
@@ -513,7 +513,7 @@ FJsEnvImpl::FJsEnvImpl(std::shared_ptr<IJSModuleLoader> InModuleLoader, std::sha
 
     MethodBindingHelper<&FJsEnvImpl::DispatchProtocolMessage>::Bind(
         Isolate, Context, Global, "__tgjsDispatchProtocolMessage", This);
-
+    MethodBindingHelper<&FJsEnvImpl::FullGC>::Bind(Isolate, Context, Global, "FullGC", This);
     Isolate->SetPromiseRejectCallback(&PromiseRejectCallback<FJsEnvImpl>);
     Global
         ->Set(Context, FV8Utils::ToV8String(Isolate, "__tgjsSetPromiseRejectCallback"),
@@ -2791,6 +2791,10 @@ v8::Local<v8::Value> FJsEnvImpl::FindOrAddContainer(
     BindContainer(Ptr, Result,
         PassByPointer ? FScriptArrayWrapper::OnGarbageCollected : FScriptArrayWrapper::OnGarbageCollectedWithFree, PassByPointer,
         EArray);
+    if (!PassByPointer)
+    {
+        UE_LOG(LogTemp, Log, TEXT("[BindContainer]<FScriptArrayWrapper> : (%p)"), Ptr)
+    }
     DataTransfer::SetPointer(Isolate, Result, GetContainerPropertyTranslator(Property), 1);
     return Result;
 }
@@ -2809,6 +2813,10 @@ v8::Local<v8::Value> FJsEnvImpl::FindOrAddContainer(
     auto Result = SetTemplate.Get(Isolate)->InstanceTemplate()->NewInstance(Context).ToLocalChecked();
     BindContainer(Ptr, Result,
         PassByPointer ? FScriptSetWrapper::OnGarbageCollected : FScriptSetWrapper::OnGarbageCollectedWithFree, PassByPointer, ESet);
+    if (!PassByPointer)
+    {
+        UE_LOG(LogTemp, Log, TEXT("[BindContainer]<FScriptSetWrapper> : (%p)"), Ptr)
+    }
     DataTransfer::SetPointer(Isolate, Result, GetContainerPropertyTranslator(Property), 1);
     return Result;
 }
@@ -2827,6 +2835,10 @@ v8::Local<v8::Value> FJsEnvImpl::FindOrAddContainer(v8::Isolate* Isolate, v8::Lo
     auto Result = MapTemplate.Get(Isolate)->InstanceTemplate()->NewInstance(Context).ToLocalChecked();
     BindContainer(Ptr, Result,
         PassByPointer ? FScriptMapWrapper::OnGarbageCollected : FScriptMapWrapper::OnGarbageCollectedWithFree, PassByPointer, EMap);
+    if (!PassByPointer)
+    {
+        UE_LOG(LogTemp, Log, TEXT("[BindContainer]<FScriptMapWrapper> : (%p)"), Ptr)
+    }
     DataTransfer::SetPointer(Isolate, Result, GetContainerPropertyTranslator(KeyProperty), 1);
     DataTransfer::SetPointer(Isolate, Result, GetContainerPropertyTranslator(ValueProperty), 2);
     return Result;
@@ -2838,6 +2850,8 @@ void FJsEnvImpl::BindStruct(
     DataTransfer::SetPointer(MainIsolate, JSObject, Ptr, 0);
     DataTransfer::SetPointer(
         MainIsolate, JSObject, static_cast<UScriptStruct*>(ScriptStructWrapper->Struct.Get()), 1);    // add type info
+
+    UE_LOG(LogTemp, Log, TEXT("[BindStruct]PassByPointer:%d <%s> : (%p)"), PassByPointer, *ScriptStructWrapper->Struct.Get()->GetName(), Ptr)
 
     if (!PassByPointer)
     {
@@ -2923,6 +2937,7 @@ void FJsEnvImpl::UnBindStruct(FScriptStructWrapper* ScriptStructWrapper, void* P
     auto CacheNodePtr = StructCache.Find(Ptr);
     if (CacheNodePtr)
     {
+        UE_LOG(LogTemp, Log, TEXT("[UnBindStruct]<%s> : (%p)"), *ScriptStructWrapper->Struct.Get()->GetName(), Ptr)
         (void) (CacheNodePtr->Remove(ScriptStructWrapper->Struct.Get(), true));
         if (!CacheNodePtr->TypeId)    // last one
         {
@@ -3412,6 +3427,11 @@ void FJsEnvImpl::NewContainer(const v8::FunctionCallbackInfo<v8::Value>& Info)
     }
 }
 
+void FJsEnvImpl::FullGC(const v8::FunctionCallbackInfo<v8::Value>& Info)
+{
+    this->RequestFullGarbageCollectionForTesting();
+}
+    
 void FJsEnvImpl::Start(const FString& ModuleNameOrScript, const TArray<TPair<FString, UObject*>>& Arguments, bool IsScript)
 {
 #ifdef SINGLE_THREAD_VERIFY

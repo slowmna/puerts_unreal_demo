@@ -1,0 +1,10 @@
+{
+  "version": 2,
+  "dgSpecHash": "s/Sm4rah4pACIcAYqIGcL5LsDL6bXuZBioosA5Fh3HCXmhNshcCl4sBktSyOGu1+08hWqL1wFWu6+zTGGgHI5w==",
+  "success": true,
+  "projectFilePath": "G:\\puerts_unreal_demo_slowman\\Plugins\\Puerts\\Source\\CSharpParamDefaultValueMetas\\CSharpParamDefaultValueMetas.ubtplugin.csproj",
+  "expectedPackageFiles": [
+    "C:\\Users\\waynnewu\\.nuget\\packages\\microsoft.csharp\\4.7.0\\microsoft.csharp.4.7.0.nupkg.sha512"
+  ],
+  "logs": []
+}

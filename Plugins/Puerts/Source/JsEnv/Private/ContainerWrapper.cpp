@@ -673,6 +673,7 @@ void FScriptMapWrapper::IsValidIndex(const v8::FunctionCallbackInfo<v8::Value>& 
 
     auto Self = FV8Utils::GetPointerFast<FScriptMap>(Info.Holder(), 0);
     int32 Index = Info[0]->Int32Value(Context).ToChecked();
+    UE_LOG(LogTemp, Log, TEXT("IsValidIndex [FScriptMap]:%p"), Self);
     Info.GetReturnValue().Set(Self->IsValidIndex(Index));
 }
 

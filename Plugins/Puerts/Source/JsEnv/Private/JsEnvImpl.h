@@ -85,7 +85,7 @@ public:
         void* InExternalContext);
 
     virtual ~FJsEnvImpl() override;
-
+    void FullGC(const v8::FunctionCallbackInfo<v8::Value>& Info);
     virtual void Start(
         const FString& ModuleNameOrScript, const TArray<TPair<FString, UObject*>>& Arguments, bool IsScript) override;
 
